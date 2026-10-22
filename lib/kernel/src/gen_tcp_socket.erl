@@ -177,6 +177,7 @@ connect_lookup(Domain, Address, Port, Mod, Opts0, Timer) ->
         TP  = val(ErrRef, Mod:getserv(Port)),
 	%% ?DBG(['process connect options']),
         CO  = val(ErrRef, inet:connect_options(Opts2, Mod)),
+        ok(ErrRef, check_bind_addr(Domain, CO)),
 	%% ?DBG(['process sockaddrs']),
 	SAs = sockaddrs(IPs, TP, Domain),
 	%% ?DBG([{sas, SAs}, {co, CO}]),
@@ -298,6 +299,19 @@ is_localhost({0,0,0,0,0,0,0,1} = Loopback, inet6) ->
     {true, Loopback};
 is_localhost(_, _) ->
     {false, undefined}.
+
+%% On Windows the socket NIF connects with ConnectEx, which requires
+%% a bound socket, and a Unix Domain Socket can only be bound to a path
+%% in the file system, so the user has to provide one
+check_bind_addr(local, #connect_opts{ifaddr = undefined}) ->
+    case os:type() of
+        {win32, nt} ->
+            {error, enotsup};
+        _ ->
+            ok
+    end;
+check_bind_addr(_Domain, _ConnectOpts) ->
+    ok.
 
 bind_addr(_,
 	  Domain, #{family := Domain} = BindSockaddr, _BindPort) ->
