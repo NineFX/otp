@@ -1078,10 +1078,31 @@ t_local_basic(Config) ->
 
 t_local_unbound(Config) ->
     ?TC_TRY(?FUNCTION_NAME,
-	    fun() -> is_not_windows() end,
-	    fun() -> do_local_unbound(Config) end).
+            fun() -> do_local_unbound(os:type(), Config) end).
 
-do_local_unbound(Config) ->
+do_local_unbound({win32, nt}, Config) ->
+    %% On Windows a local socket has to be bound to a path before
+    %% connect (ConnectEx), so connect without one shall fail
+    ?P("create local (server) filename"),
+    SFile = local_filename(server),
+    SAddr = {local,bin_filename(SFile)},
+    _ = file:delete(SFile),
+    %%
+    InetBackendOpts = ?INET_BACKEND_OPTS(Config),
+    ?P("create listen socket with ifaddr ~p", [SAddr]),
+    L = ok(gen_tcp:listen(0, InetBackendOpts ++
+                              [{ifaddr,SAddr},{active,false}])),
+    ?P("listen socket created: ~p"
+       "~n   => try connect (expect enotsup)", [L]),
+    {error, enotsup} =
+        gen_tcp:connect(SAddr, 0, InetBackendOpts ++ [{active,false}]),
+    ?P("close listen socket"),
+    ok = gen_tcp:close(L),
+    ?P("delete (local) file"),
+    ok = file:delete(SFile),
+    ?P("done"),
+    ok;
+do_local_unbound(_OS, Config) ->
     ?P("create local (server) filename"),
     SFile = local_filename(server),
     SAddr = {local,bin_filename(SFile)},

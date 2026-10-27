@@ -427,8 +427,9 @@ A network address for the `inet6` family (`AF_INET6`, IPv6)
 -doc """
 A network address for the `local` family (`AF_LOCAL | AF_UNIX`)
 
-This address family, also known as "Unix domain sockets" only works
-on Unix-like systems.
+This address family, also known as "Unix domain sockets", works
+on Unix-like systems. On Windows it is only supported for stream sockets,
+and in `m:gen_tcp` only with `inet_backend = socket`.
 
 `File` is normally a file pathname in a local filesystem. It is limited in
 length by the operating system, traditionally to 108 bytes.

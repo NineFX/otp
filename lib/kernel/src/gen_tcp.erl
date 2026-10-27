@@ -122,11 +122,13 @@ For more examples, see section [Examples](#module-examples).
 >
 >   See [async shutdown write](#async_shutdown_write) for more info.
 >
-> - Windows require sockets (domain = `inet | inet6`) to be bound.
+> - Windows require sockets to be bound.
 >
 >   _Currently_ all sockets created on Windows with `inet_backend = socket` will
 >   be bound. If the user does not provide an address, gen_tcp will try to
->   'figure out' an address itself.
+>   'figure out' an address itself. That is not possible for `domain = local`,
+>   so connecting fails with `{error, enotsup}` unless the user provides a path
+>   with option `{ifaddr, {local, Path}}`.
 
 ## Examples
 
